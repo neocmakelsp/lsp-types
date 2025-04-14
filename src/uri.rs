@@ -118,33 +118,44 @@ fn strict_canonicalize<P: AsRef<Path>>(path: P) -> std::io::Result<PathBuf> {
     impl_(canon)
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum UriError {
+    #[error("scheme wrong")]
+    SchemeWrong,
+    #[error("url has no authority component")]
+    AuthorityWrong,
+}
+
 impl Uri {
-    pub fn to_file_path(&self) -> Option<Cow<Path>> {
+    pub fn to_file_path(&self) -> Result<Cow<Path>, UriError> {
+        if self.scheme().as_str().to_lowercase() != "file" {
+            return Err(UriError::SchemeWrong);
+        }
         let path = match self.path().decode().into_string_lossy() {
             Cow::Borrowed(ref_) => Cow::Borrowed(Path::new(ref_)),
             Cow::Owned(owned) => Cow::Owned(PathBuf::from(owned)),
         };
 
         if cfg!(windows) {
-            let authority = self.authority().expect("url has no authority component");
+            let authority = self.authority().ok_or(UriError::AuthorityWrong)?;
             let host = authority.host();
             if host.is_empty() {
                 // very high chance this is a `file:///` uri
                 // in which case the path will include a leading slash we need to remove
                 let host = path.to_string_lossy();
                 let host = &host[1..];
-                return Some(Cow::Owned(PathBuf::from(host)));
+                return Ok(Cow::Owned(PathBuf::from(host)));
             }
 
             let host = format!("{host}:");
-            Some(Cow::Owned(
+            Ok(Cow::Owned(
                 Path::new(&host)
                     .components()
                     .chain(path.components())
                     .collect(),
             ))
         } else {
-            Some(path)
+            Ok(path)
         }
     }
 
