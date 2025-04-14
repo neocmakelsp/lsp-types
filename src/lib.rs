@@ -12,7 +12,7 @@ extern crate bitflags;
 
 use std::{collections::HashMap, fmt::Debug};
 
-use serde::{de, de::Error, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de, de::Error};
 use serde_json::Value;
 
 pub use uri::Uri;
