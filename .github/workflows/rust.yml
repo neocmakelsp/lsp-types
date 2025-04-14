@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       matrix:
-        rust: [stable, nightly]
+        rust: [stable]
         features: ["", proposed]
 
     env:
@@ -23,16 +23,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@stable
       with:
-        profile: minimal
-        toolchain: ${{ matrix.rust }}
-        override: true
+        components: clippy
 
     - name: Build
       run: cargo build
+
+    - name: Fmt
+      run: cargo fmt --all -- --check
+
+    - name: clippy
+      run: cargo clippy --all-targets -- -D warnings
 
     - name: Run tests
       run: >
