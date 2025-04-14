@@ -21,9 +21,9 @@ impl<'de> Deserialize<'de> for Uri {
         D: serde::Deserializer<'de>,
     {
         let string = String::deserialize(deserializer)?;
-        fluent_uri::Uri::<String>::parse_from(string)
+        fluent_uri::Uri::<String>::parse(string)
             .map(Uri)
-            .map_err(|(_, error)| Error::custom(error.to_string()))
+            .map_err(|err| Error::custom(err.to_string()))
     }
 }
 
@@ -40,7 +40,7 @@ impl PartialOrd for Uri {
 }
 
 impl FromStr for Uri {
-    type Err = fluent_uri::ParseError;
+    type Err = fluent_uri::error::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // TOUCH-UP:
