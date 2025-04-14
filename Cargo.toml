@@ -1,11 +1,15 @@
 [package]
-name = "lsp-types"
+name = "lsp-types-f"
 version = "0.97.0"
-authors = ["Markus Westerlind <marwes91@gmail.com>", "Bruno Medeiros <bruno.do.medeiros@gmail.com>"]
+authors = [
+	"Markus Westerlind <marwes91@gmail.com>",
+	"Bruno Medeiros <bruno.do.medeiros@gmail.com>",
+	"Decodertalkers <aakari@tutanota.com>",
+]
 edition = "2024"
 description = "Types for interaction with a language server, using VSCode's Language Server Protocol"
 
-repository = "https://github.com/gluon-lang/lsp-types"
+repository = "https://github.com/neocmakelsp/lsp-types"
 documentation = "https://docs.rs/lsp-types"
 
 readme = "README.md"
