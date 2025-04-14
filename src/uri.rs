@@ -174,8 +174,8 @@ impl Uri {
 
 #[cfg(test)]
 mod tests {
-    use super::strict_canonicalize;
     use super::Uri;
+    use super::strict_canonicalize;
     use std::path::Path;
 
     #[test]
