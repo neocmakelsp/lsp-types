@@ -571,6 +571,7 @@ pub struct CompletionItemLabelDetails {
     pub description: Option<String>,
 }
 
+#[allow(clippy::field_reassign_with_default)]
 #[cfg(test)]
 mod tests {
     use super::*;
