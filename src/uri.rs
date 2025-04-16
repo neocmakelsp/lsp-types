@@ -471,8 +471,6 @@ fn file_url_segments_to_pathbuf_windows(
 
     let path = PathBuf::from(string);
 
-    std::println!("{:?}", path);
-
     debug_assert!(
         path.is_absolute(),
         "to_file_path() failed to produce an absolute Path"
