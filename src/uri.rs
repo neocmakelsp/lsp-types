@@ -152,8 +152,9 @@ impl Uri {
             .segments_if_absolute()
             .ok_or(UriPathError::NoSegments)?;
         let host: Option<&str> = match self.authority().map(|authority| authority.host()) {
-            None | Some("localhost") => None,
-            Some(host_data) if self.scheme().as_str() == "file" => Some(host_data),
+            None => None,
+            Some(host_data) if host_data.is_empty() || host_data == "localhost" => None,
+            Some(host_data) if cfg!(windows) && self.scheme().as_str() == "file" => Some(host_data),
             Some(_) => return Err(UriPathError::NoSegments),
         };
         file_url_segments_to_pathbuf(host, segments)
@@ -360,7 +361,7 @@ fn file_url_segments_to_pathbuf(
 
     use std::path::PathBuf;
 
-    if host.is_some_and(|host| !host.is_empty()) {
+    if host.is_some() {
         return Err(UriPathError::HostError);
     }
 
