@@ -20,6 +20,7 @@ mod control_chars {
     const PATH: &AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
     pub(crate) const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'%');
 
+    #[allow(unused)]
     pub(crate) const SPECIAL_PATH_SEGMENT: &AsciiSet = &PATH_SEGMENT.add(b'\\');
 }
 
@@ -185,6 +186,7 @@ impl Uri {
     /// # Errors
     ///
     /// Will return error when the path is illegal
+    #[cfg(not(windows))]
     pub fn from_file_path<P: AsRef<std::path::Path>>(path: P) -> Result<Self, UriPathError> {
         use control_chars::*;
         use fluent_uri::Uri as FUri;
@@ -226,6 +228,84 @@ impl Uri {
             ));
         }
         if empty {
+            serialization.push('/');
+        }
+        let path = EStr::new(&serialization).ok_or(UriPathError::IllegalPath)?;
+        Ok(Self(
+            FUri::builder()
+                .scheme(SCHEME_FILE)
+                .authority(Authority::EMPTY)
+                .path(path)
+                .build()?,
+        ))
+    }
+
+    #[cfg(windows)]
+    pub fn from_file_path<P: AsRef<std::path::Path>>(path: P) -> Result<Self, UriPathError> {
+        use control_chars::*;
+        use core::fmt::Write;
+        use fluent_uri::Uri as FUri;
+        use fluent_uri::component::Authority;
+        use fluent_uri::encoding::EStr;
+        use percent_encoding::percent_encode;
+        use std::path::{Component, Prefix};
+        let path = path.as_ref();
+        if !path.is_absolute() {
+            return Err(UriPathError::NotAbsolutePath);
+        }
+        let mut serialization = "".to_owned();
+        let mut components = path.components();
+        let host_start = serialization.len() + 1;
+        match components.next() {
+            Some(Component::Prefix(ref p)) => match p.kind() {
+                Prefix::Disk(letter) | Prefix::VerbatimDisk(letter) => {
+                    serialization.push('/');
+
+                    serialization.push(letter as char);
+
+                    serialization.push(':');
+                }
+
+                Prefix::UNC(server, share) | Prefix::VerbatimUNC(server, share) => {
+                    let server = server.to_str().ok_or(UriPathError::HostError)?;
+                    write!(&mut serialization, "{}", server).unwrap();
+
+                    serialization.push('/');
+
+                    let share = share.to_str().ok_or(UriPathError::HostError)?;
+
+                    serialization.extend(percent_encode(share.as_bytes(), PATH_SEGMENT));
+                }
+
+                _ => return Err(UriPathError::HostError),
+            },
+
+            _ => return Err(UriPathError::HostError),
+        }
+        let mut path_only_has_prefix = true;
+
+        for component in components {
+            if component == Component::RootDir {
+                continue;
+            }
+
+            path_only_has_prefix = false;
+
+            // FIXME: somehow work with non-unicode?
+
+            let component = component
+                .as_os_str()
+                .to_str()
+                .ok_or(UriPathError::HostError)?;
+
+            serialization.push('/');
+
+            serialization.extend(percent_encode(component.as_bytes(), PATH_SEGMENT));
+        }
+
+        // A windows drive letter must end with a slash.
+
+        if serialization.len() > host_start && path_only_has_prefix {
             serialization.push('/');
         }
         let path = EStr::new(&serialization).ok_or(UriPathError::IllegalPath)?;
