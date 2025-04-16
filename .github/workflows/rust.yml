@@ -41,4 +41,4 @@ jobs:
 
     - name: Run tests
       run: |
-        cargo test --features "${{ matrix.features }}"
+        cargo test --features "${{ matrix.features }}" -- --nocapture
