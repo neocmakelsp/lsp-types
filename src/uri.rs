@@ -305,7 +305,10 @@ impl Uri {
 
         // A windows drive letter must end with a slash.
 
-        if serialization.len() > host_start && path_only_has_prefix {
+        if serialization.len() > host_start
+            && is_windows_drive_letter(&serialization[host_start..])
+            && path_only_has_prefix
+        {
             serialization.push('/');
         }
         let path = EStr::new(&serialization).ok_or(UriPathError::IllegalPath)?;
@@ -324,10 +327,22 @@ impl Uri {
     }
 }
 
+#[cfg(windows)]
+fn starts_with_windows_drive_letter(s: &str) -> bool {
+    s.len() >= 2
+        && ascii_alpha(s.as_bytes()[0] as char)
+        && matches!(s.as_bytes()[1], b':' | b'|')
+        && (s.len() == 2 || matches!(s.as_bytes()[2], b'/' | b'\\' | b'?' | b'#'))
+}
+#[cfg(windows)]
+#[inline]
+fn is_windows_drive_letter(segment: &str) -> bool {
+    segment.len() == 2 && starts_with_windows_drive_letter(segment)
+}
+
 #[cfg(any(unix, target_os = "redox", target_os = "wasi", target_os = "hermit"))]
 fn file_url_segments_to_pathbuf(
     host: Option<&str>,
-
     segments: Split<'_, UriPath>,
 ) -> Result<std::path::PathBuf, UriPathError> {
     use alloc::vec::Vec;
@@ -362,7 +377,6 @@ fn file_url_segments_to_pathbuf(
     }
 
     // A windows drive letter must end with a slash.
-
     if bytes.len() > 2
         && bytes[bytes.len() - 2].is_ascii_alphabetic()
         && matches!(bytes[bytes.len() - 1], b':' | b'|')
@@ -455,6 +469,8 @@ fn file_url_segments_to_pathbuf_windows(
     }
 
     let path = PathBuf::from(string);
+
+    std::println!("{:?}", path);
 
     debug_assert!(
         path.is_absolute(),
