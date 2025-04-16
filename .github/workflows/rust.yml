@@ -40,6 +40,5 @@ jobs:
       run: cargo clippy --all-targets -- -D warnings
 
     - name: Run tests
-      run: >
-        FEATURES=${{ matrix.features }}
-        cargo test --features ${FEATURES:-""}
+      run: |
+        cargo test --features "${{ matrix.features }}"

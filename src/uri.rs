@@ -37,6 +37,10 @@ pub enum UriPathError {
     NotAbsolutePath,
     #[error("Path illegal")]
     IllegalPath,
+
+    #[cfg(target_os = "windows")]
+    #[error("Path component not know")]
+    PathComponentNotKnow,
 }
 
 const SCHEME_FILE: &Scheme = Scheme::new_or_panic("file");
@@ -200,7 +204,16 @@ impl Uri {
         for component in path.components().skip(1) {
             empty = false;
             serialization.push('/');
-            #[cfg(not(target_os = "wasi"))]
+            #[cfg(target_os = "windows")]
+            serialization.extend(percent_encode(
+                component
+                    .as_os_str()
+                    .to_str()
+                    .ok_or(UriPathError::PathComponentNotKnow)?
+                    .as_bytes(),
+                SPECIAL_PATH_SEGMENT,
+            ));
+            #[cfg(all(not(target_os = "wasi"), not(target_os = "windows")))]
             serialization.extend(percent_encode(
                 component.as_os_str().as_bytes(),
                 SPECIAL_PATH_SEGMENT,
@@ -380,9 +393,10 @@ mod tests {
     /// Source: https://stackoverflow.com/a/70970317
     #[inline]
     #[cfg(windows)]
-    fn strict_canonicalize<P: AsRef<Path>>(path: P) -> std::io::Result<PathBuf> {
+    fn strict_canonicalize<P: AsRef<Path>>(path: P) -> std::io::Result<std::path::PathBuf> {
         use std::io;
 
+        use std::path::PathBuf;
         fn impl_(path: PathBuf) -> std::io::Result<PathBuf> {
             let head = path
                 .components()
@@ -421,6 +435,7 @@ mod tests {
         assert_eq!(lhs, rhs);
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_path_roundtrip_conversion() {
         let src = strict_canonicalize(Path::new(".")).unwrap();
