@@ -15,12 +15,13 @@ jobs:
       matrix:
         rust: [stable]
         features: ["", proposed]
+        os: ["ubuntu-latest", "windows-latest"]
 
     env:
       CARGO_INCREMENTAL: 0 # Incremental compilation is slower and bloats the cache
       RUST_BACKTRACE: 1
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
