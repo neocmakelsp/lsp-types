@@ -187,6 +187,9 @@ impl Uri {
         use fluent_uri::component::Authority;
         use fluent_uri::encoding::EStr;
         use percent_encoding::percent_encode;
+        #[cfg(target_os = "hermit")]
+        use std::os::hermit::ffi::osstrext;
+        #[cfg(any(unix, target_os = "redox"))]
         use std::os::unix::ffi::OsStrExt;
         let path = path.as_ref();
         if !path.is_absolute() {
@@ -293,7 +296,7 @@ fn file_url_segments_to_pathbuf(
 #[cfg(windows)]
 fn file_url_segments_to_pathbuf(
     host: Option<&str>,
-    segments: Split<'_, Path>,
+    segments: Split<'_, UriPath>,
 ) -> Result<std::path::PathBuf, UriPathError> {
     file_url_segments_to_pathbuf_windows(host, segments)
 }
