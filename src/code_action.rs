@@ -133,7 +133,7 @@ pub type CodeActionResponse = Vec<CodeActionOrCommand>;
 #[serde(untagged)]
 pub enum CodeActionOrCommand {
     Command(Command),
-    CodeAction(CodeAction),
+    CodeAction(Box<CodeAction>),
 }
 
 impl From<Command> for CodeActionOrCommand {
@@ -144,7 +144,7 @@ impl From<Command> for CodeActionOrCommand {
 
 impl From<CodeAction> for CodeActionOrCommand {
     fn from(action: CodeAction) -> Self {
-        CodeActionOrCommand::CodeAction(action)
+        CodeActionOrCommand::CodeAction(Box::new(action))
     }
 }
 
@@ -379,7 +379,7 @@ mod tests {
                     command: "command".to_string(),
                     arguments: None,
                 }),
-                CodeActionOrCommand::CodeAction(CodeAction {
+                CodeActionOrCommand::CodeAction(Box::new(CodeAction {
                     title: "title".to_string(),
                     kind: Some(CodeActionKind::QUICKFIX),
                     command: None,
@@ -387,7 +387,7 @@ mod tests {
                     edit: None,
                     is_preferred: None,
                     ..CodeAction::default()
-                }),
+                })),
             ],
             r#"[{"title":"title","command":"command"},{"title":"title","kind":"quickfix"}]"#,
         )
