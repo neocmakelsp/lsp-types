@@ -2,9 +2,9 @@ use std::{hash::Hash, ops::Deref, str::FromStr};
 
 use serde::{Deserialize, Serialize, de::Error};
 extern crate alloc;
-use fluent_uri::encoding::Split;
-use fluent_uri::encoding::encoder::Path as UriPath;
-use fluent_uri::{component::Scheme, error::BuildError};
+use fluent_uri::pct_enc::Split;
+use fluent_uri::pct_enc::encoder::Path as UriPath;
+use fluent_uri::{build::BuildError, component::Scheme};
 
 mod control_chars {
     use percent_encoding::AsciiSet;
@@ -67,7 +67,7 @@ impl<'de> Deserialize<'de> for Uri {
         let string = String::deserialize(deserializer)?;
         fluent_uri::Uri::<String>::parse(string)
             .map(Uri)
-            .map_err(|err| Error::custom(err.to_string()))
+            .map_err(|(_, err)| Error::custom(err.to_string()))
     }
 }
 
@@ -84,7 +84,7 @@ impl PartialOrd for Uri {
 }
 
 impl FromStr for Uri {
-    type Err = fluent_uri::error::ParseError;
+    type Err = fluent_uri::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // TOUCH-UP:
@@ -192,7 +192,7 @@ impl Uri {
         use control_chars::*;
         use fluent_uri::Uri as FUri;
         use fluent_uri::component::Authority;
-        use fluent_uri::encoding::EStr;
+        use fluent_uri::pct_enc::EStr;
         use percent_encoding::percent_encode;
         #[cfg(target_os = "hermit")]
         use std::os::hermit::ffi::osstrext;
@@ -321,7 +321,7 @@ impl Uri {
                 .build()?,
         ))
     }
-    pub fn parse(path: &str) -> Result<Self, fluent_uri::error::ParseError> {
+    pub fn parse(path: &str) -> Result<Self, fluent_uri::ParseError> {
         use fluent_uri::Uri as FUri;
         let uri = FUri::parse(path)?;
         Ok(Self(uri.into()))
