@@ -247,7 +247,7 @@ impl Uri {
         use core::fmt::Write;
         use fluent_uri::Uri as FUri;
         use fluent_uri::component::Authority;
-        use fluent_uri::encoding::EStr;
+        use fluent_uri::pct_enc::EStr;
         use percent_encoding::percent_encode;
         use std::path::{Component, Prefix};
         let path = path.as_ref();
@@ -496,15 +496,15 @@ mod tests {
             let head = path
                 .components()
                 .next()
-                .ok_or(io::Error::new(io::ErrorKind::Other, "empty path"))?;
+                .ok_or(io::Error::other("empty path"))?;
             let disk_;
             let head = if let std::path::Component::Prefix(prefix) = head {
                 if let std::path::Prefix::VerbatimDisk(disk) = prefix.kind() {
                     disk_ = format!("{}:", disk as char);
-                    Path::new(&disk_).components().next().ok_or(io::Error::new(
-                        io::ErrorKind::Other,
-                        "failed to parse disk component",
-                    ))?
+                    Path::new(&disk_)
+                        .components()
+                        .next()
+                        .ok_or(io::Error::other("failed to parse disk component"))?
                 } else {
                     head
                 }
